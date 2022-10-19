@@ -2,9 +2,13 @@
 
 import $ from 'jquery'
 
+import './css/index.css'
+
+import './css/index.less'
+
 //2.利用jQuery操作DOM
 
 $(function () {
-  $('li:odd').css('backgroundColor', 'yellow')
-  $('li:even').css('backgroundColor', 'blue')
+  $('li:odd').css('backgroundColor', 'red')
+  $('li:even').css('backgroundColor', 'cyan')
 })
