@@ -28,6 +28,7 @@ module.exports = {
     filename: 'js/bundle.js',
     assetModuleFilename: 'images/[hash][ext][query]',
   },
+  devtool: 'eval-cheap-module-source-map',
 
   // 服务器配置
   devServer: {
