@@ -448,135 +448,135 @@ html,body,ul{
  { test: /\.less$/,use: [{ loader: ‘style-loader’ }, { loader: ‘css-loader’ },{loader:‘less-loader’}]}//不用less,less是less-loader的内置依赖项，而是要用style和css
 ```
 
+## 5.加载 images 图像
 
+假如，现在我们正在下载 CSS，但是像 background 和 icon 这样的图像，要如何处理呢？在 webpack 5 中，可以使用内置的 [Asset Modules](https://webpack.docschina.org/guides/asset-modules/)，我们可以轻松地将这些内容混入我们的系统中：
 
-#### 打包处理[样式表](https://so.csdn.net/so/search?q=样式表&spm=1001.2101.3001.7020)中与url相关的文件 url-loader file-loader
+**webpack.config.js**
 
-现在在index上面新建一个id为box的div，目的是将src/img/local.png作为该box的背景图片
+```diff
+ const path = require('path');
 
-正常来说，在index.less下面，会对这个div进行样式的编辑
-
-```less
-#box{
-	width: 380px;
-	height: 114px;
-	background-color: yellow;
-	background: url(../img/local.png);
-}
-123456
+ module.exports = {
+   entry: './src/index.js',
+   output: {
+     filename: 'bundle.js',
+     path: path.resolve(__dirname, 'dist'),
+   },
+   module: {
+     rules: [
+       {
+         test: /\.css$/i,
+         use: ['style-loader', 'css-loader'],
+       },
++      {
++        test: /\.(png|svg|jpg|jpeg|gif)$/i,
++        type: 'asset/resource',
++      },
+     ],
+   },
+ };
 ```
 
-保存之后，也还是报错了： You may need an appropriate loader to handle this file type, 这是因为不能处理图片文件.jpg,.png结尾的文件
+现在，在 `import MyImage from './my-image.png'` 时，此图像将被处理并添加到 `output` 目录，*并且* `MyImage` 变量将包含该图像在处理后的最终 url。在使用 [css-loader](https://webpack.docschina.org/loaders/css-loader) 时，如前所示，会使用类似过程处理你的 CSS 中的 `url('./my-image.png')`。loader 会识别这是一个本地文件，并将 `'./my-image.png'` 路径，替换为 `output` 目录中图像的最终路径。而 [html-loader](https://webpack.docschina.org/loaders/html-loader) 以相同的方式处理 `<img src="./my-image.png" />`。
 
-安装： `npm i url-loader file-loader -D` 安装两个loader
+我们向项目添加一个图像，然后看它是如何工作的，你可以使用任何你喜欢的图像：
 
-配置 ： `{ test: /\.jpg|png|gif$/,use:[{loader: 'url-loader'}]} //暂时就只配置url-loader，图片各种后缀使用|`
+**project**
 
-之后重新运行即可：但是div的背景是截取的图片的一部分…
-
-**url-loader参数limit**
-
-网页中，小的图片可以直接转化为base64直接加载，大型图片再发请求，这样可以提高网页访问的性能，而选择大小就需要url-loader的参数limit ，小于等于的就会转为base64，limit是用来指定图片的大小，单位为byte
-
-```test
-{ test: /\.jpg|png|gif$/,use:[{loader: 'url-loader?limit=207946'}]
-1
+```diff
+  webpack-demo
+  |- package.json
+  |- package-lock.json
+  |- webpack.config.js
+  |- /dist
+    |- bundle.js
+    |- index.html
+  |- /src
++   |- icon.png
+    |- style.css
+    |- index.js
+  |- /node_modules
 ```
 
-设置之后可以重新查看图片 ： url(data:image/png;base64 —> 被转为了base64
+**src/index.js**
 
-## 5.打包处理样式表中与url路径相关的文件 
+```diff
+ import _ from 'lodash';
+ import './style.css';
++import Icon from './icon.png';
 
-现在在index上面新建一个id为box的div，目的是将src/img/local.png作为该box的背景图片
+ function component() {
+   const element = document.createElement('div');
 
-正常来说，在index.less下面，会对这个div进行样式的编辑
+   // Lodash, now imported by this script
+   element.innerHTML = _.join(['Hello', 'webpack'], ' ');
+   element.classList.add('hello');
 
-```less
-#box{
-	width: 380px;
-	height: 114px;
-	background-color: yellow;
-	background: url(../img/local.png);
-}
-123456
++  // 将图像添加到我们已经存在的 div 中。
++  const myIcon = new Image();
++  myIcon.src = Icon;
++
++  element.appendChild(myIcon);
++
+   return element;
+ }
+
+ document.body.appendChild(component());
 ```
 
-保存之后，也还是报错了： You may need an appropriate loader to handle this file type, 这是因为不能处理图片文件.jpg,.png结尾的文件
+**src/style.css**
 
-安装： `npm i url-loader file-loader -D` 安装两个loader
-
-配置 ： `{ test: /\.jpg|png|gif$/,use:[{loader: 'url-loader'}]} //暂时就只配置url-loader，图片各种后缀使用|`
-
-之后重新运行即可：但是div的背景是截取的图片的一部分…
-
-**url-loader参数limit**
-
-网页中，小的图片可以直接转化为base64直接加载，大型图片再发请求，这样可以提高网页访问的性能，而选择大小就需要url-loader的参数limit ，小于等于的就会转为base64，limit是用来指定图片的大小，单位为byte
-
-```test
-{ test: /\.jpg|png|gif$/,use:[{loader: 'url-loader?limit=207946'}]
-1
+```diff
+ .hello {
+   color: red;
++  background: url('./icon.png');
+ }
 ```
 
-设置之后可以重新查看图片 ： url(data:image/png;base64 —> 被转为了base64
+重新构建并再次打开 `index.html` 文件：
 
-#### loader配置其他方式
+```bash
+$ npm run build
 
-loader配置可以采用对象的方式进行配置：
-
-```javascript
-use:{
-    loader:'url-loader' , //loader属性指向调用的loader
-    options:{
-        limit:2229  //通过options指定参数项
-    }
-}
-123456
+...
+[webpack-cli] Compilation finished
+assets by status 9.88 KiB [cached] 1 asset
+asset bundle.js 73.4 KiB [emitted] [minimized] (name: main) 1 related asset
+runtime modules 1.82 KiB 6 modules
+orphan modules 326 bytes [orphan] 1 module
+cacheable modules 540 KiB (javascript) 9.88 KiB (asset)
+  modules by path ./node_modules/ 539 KiB
+    modules by path ./node_modules/css-loader/dist/runtime/*.js 2.38 KiB
+      ./node_modules/css-loader/dist/runtime/api.js 1.57 KiB [built] [code generated]
+      ./node_modules/css-loader/dist/runtime/getUrl.js 830 bytes [built] [code generated]
+    ./node_modules/lodash/lodash.js 530 KiB [built] [code generated]
+    ./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js 6.67 KiB [built] [code generated]
+  modules by path ./src/ 1.45 KiB (javascript) 9.88 KiB (asset)
+    ./src/index.js + 1 modules 794 bytes [built] [code generated]
+    ./src/icon.png 42 bytes (javascript) 9.88 KiB (asset) [built] [code generated]
+    ./node_modules/css-loader/dist/cjs.js!./src/style.css 648 bytes [built] [code generated]
+webpack 5.4.0 compiled successfully in 1972 ms
 ```
 
-#### 打包处理js文件高级语法
+如果一切顺利，你现在应该看到你的 icon 图标成为了重复的背景图，以及 `Hello webpack` 文本旁边的 `img` 元素。如果检查此元素，你将看到实际的文件名已更改为 `29822eaa871e8eadeaa4.png`。这意味着 webpack 在 `src` 文件夹中找到我们的文件，并对其进行了处理！
 
-webpack只能打包处理一部分高级的js语法，对于webpack无法处理的js高级语法，只能使用babel-loader来协助打包；**最新版本的webpack可以处理**
 
-```javascript
-class Person{
-	//使用static为Person类声明一个静态属性
-	//webpack无法处理这个static的高级语法，需要使用babel-loader
-	static info = 'person info';
-}
-12345
-```
 
-babel-loader含有三个主要的包babel-loader，@babel/core，@babel/plugin-proposal-class-properties
 
-安装 ： `npm i babel-loader @babel/core @babel/plugin-proposal-class-properties -D`
 
-配置 ： 需要注意，除了test和use，还有一个exclude ： 排除项 ：‘node_modules’；babel-loader只需要处理用户编写的js文件，不需要处理node_modules下面的下载的其他的包文件，这样速度快
+------
 
-```javascript
-{
-				test: /\.js$/,
-				exclude:/node_modules/ ,  //这里同样是正则
-				use:{//要声明插件，用来转化高级语法，后面的@开头的都是插件
-					loader: 'babel-loader',
-					options:{
-						plugins:['@babel/plugin-proposal-class-properties']
-					}
-				}
-			}
-12345678910
-```
 
-上面的都是rules数组的一项
 
-### 打包发布
+## 6.打包发布
 
 项目完成之后，使用webpack对项目进行打包发布 ：
 
 - 开发环境下，打包生成的文件存放再内存中，无法获取到最终生成的文件
 - 开发环境下，mode为development，不会对代码进行压缩和性能优化，所以需要打包发布
 
-#### 配置webpack的打包发布
+#### 6.1 配置webpack的打包发布
 
 之前再package.json下面的scripts结点下配置的是dev命令，代表的就是development，当项目完成之后，重新配置命令`build`
 
@@ -589,65 +589,75 @@ babel-loader含有三个主要的包babel-loader，@babel/core，@babel/plugin-p
 
 这样使用命令`npm run build`
 
-#### 生成文件位置统一
+#### 6.2 自定义输出文件名
 
-直接生成文件杂乱，要将js文件统一生成到js目录中，需要再output中进行配置
+默认情况下，`asset/resource` 模块以 `[hash][ext][query]` 文件名发送到输出目录。
 
-```javascript
-//生成的位置filename，只要加上js级即可
-output: {
-		path: path.join(__dirname,'./dist'),
-		filename: 'js/boundle.js'
-	}
-12345
+可以通过在 webpack 配置中设置 [`output.assetModuleFilename`](https://webpack.docschina.org/configuration/output/#outputassetmodulefilename) 来修改此模板字符串：
+
+**webpack.config.js**
+
+```diff
+const path = require('path');
+
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    filename: 'main.js',
+    path: path.resolve(__dirname, 'dist'),
++   assetModuleFilename: 'images/[hash][ext][query]'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.png/,
+        type: 'asset/resource'
+      }
+    ]
+  },
+};
 ```
 
-对于图片文件，生成到img目录下，需要对url-loader进行配置，除了原来的limit参数，新增一个outputPath参数指定路径
+另一种自定义输出文件名的方式是，将某些资源发送到指定目录：
 
-```javascript
-{ test: /\.jpg|png|gif$/,use:{
-				loader: 'url-loader',
-				options:{
-					limit:227946,
-					outputPath:'image'
-				}
-				}}
-1234567
+```diff
+const path = require('path');
+
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    filename: 'main.js',
+    path: path.resolve(__dirname, 'dist'),
++   assetModuleFilename: 'images/[hash][ext][query]'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.png/,
+        type: 'asset/resource'
+-     }
++     },
++     {
++       test: /\.html/,
++       type: 'asset/resource',
++       generator: {
++         filename: 'static/[hash][ext][query]'
++       }
++     }
+    ]
+  },
+};
 ```
 
-#### 自动清理dist目录
+使用此配置，所有 `html` 文件都将被发送到输出目录中的 `static` 目录中。
 
-为了每次打包发布自动清理dist目录，安装配置插件`clean-webpack-plugin` npm i XX -D
+`Rule.generator.filename` 与 [`output.assetModuleFilename`](https://webpack.docschina.org/configuration/output/#outputassetmodulefilename) 相同，并且仅适用于 `asset` 和 `asset/resource` 模块类型。
 
-安装配置这个插件和之前配置html插件是相同的
+------
 
-```javascript
-const {CleanWebpackPlugin} = require('clean-webpack-plugin')
-const cleanPlugin = new CleanWebpackPlugin()
 
-//1.使用commonJS语法导入html-webpack-plugin包
-const HtmlPlugin = require('html-webpack-plugin')
 
-//2.创建html插件的实例对象
-const htmlPlugin = new HtmlPlugin({
-	template: './src/index.html',//指定源文件的存放路径
-	filename: './index.html'  //指定生成文件的存放路径
-})
-
-module.exports ={
-	mode: 'development',//mode值有development和production，开发阶段就用dev
-	entry: path.join(__dirname,'./src/index.js'), 
-	output: {
-		path: path.join(__dirname,'./dist'),
-		filename: 'js/boundle.js'
-	},
-	plugins: [htmlPlugin,cleanPlugin],  //通过plugin结点，让HtmlPlugin生效
-1234567891011121314151617181920
-```
-
-在高级的打包发布中，包括打包生成报告，分析具体的优化法案，Tree-Shaking，为第三方库提供CDN加载，配置组件的按需加载，开启路由懒加载，自定制首页的内容
-
-### Source Map
+#### 6.3 Source Map
 
 生产环境中遇到的问题： 前端项目投入生产环境后，都需要对js文件进行压缩混淆，从而减小体积，提高加载效率，但是产生问题 ： 压缩后的代码不好debug
 
@@ -658,23 +668,7 @@ Source Map是一个信息文件，里面存储这位置信息， 存储代码压
 在webpack-config.js文件中加入配置，就是和model平级
 
 ```javascript
-module.exports ={
-	mode: 'development',//mode值有development和production，开发阶段就用dev
-	devtool: 'eval-source-map',   -----------------------------------------增加的配置
-	entry: path.join(__dirname,'./src/index.js'), 
-	output: {
-		path: path.join(__dirname,'./dist'),
-		filename: 'js/boundle.js'
-	},
-	plugins: [htmlPlugin,cleanPlugin],  //通过plugin结点，让HtmlPlugin生效
-	devServer:{
-		open: true,  //代表是否自动打开
-		host: '127.0.0.1',
-		port:8090  //这样就不会出现占用
-	},
-	module:{ //所有第三方文件模块的匹配规则标识
-		rules
-12345678910111213141516
+
 ```
 
 配置之后，行数就是前后一致的
@@ -684,8 +678,7 @@ module.exports ={
 在生产环境下，省略devtool选项，最终生成的文件不包含Source Map，这就可以防止原始代码通过Source Map泄露，这样定位的错位都是转化的混淆的代码，对调试不好可以设置为： **只显示行数，不暴露代码**
 
 ```javascript
-devtool: 'nosources-source-map'
-1
+
 ```
 
 这样既方便调试，也不会泄露代码

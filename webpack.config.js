@@ -25,7 +25,8 @@ module.exports = {
     // 输出文件的存放路径
     path: path.join(__dirname, './dist'),
     // 输出文件的名称
-    filename: 'bundle.js',
+    filename: 'js/bundle.js',
+    assetModuleFilename: 'images/[hash][ext][query]',
   },
 
   // 服务器配置
@@ -41,8 +42,8 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.css$/,
-        use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
       },
       {
         test: /\.less$/,
@@ -51,6 +52,10 @@ module.exports = {
           { loader: 'css-loader' },
           { loader: 'less-loader' },
         ],
+      },
+      {
+        test: /\.(png|svg|jpg|jpeg|gif)$/i,
+        type: 'asset/resource',
       },
     ],
   },
