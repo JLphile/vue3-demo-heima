@@ -18,4 +18,4 @@ class Person {
 }
 
 console.log(Person.info)
-console.log(err)
+// console.log(err)
